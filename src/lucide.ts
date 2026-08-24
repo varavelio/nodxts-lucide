@@ -5,8 +5,8 @@ import type { Node, NodeChild } from "@varavel/nodx";
  * Creates the SVG wrapper for all Lucide icons.
  *
  * This follows the [Lucide guide](https://lucide.dev/guide/) and adds a
- * `data-nodx="lucide"` attribute so all icons can be targeted globally with
- * CSS (e.g. `svg[data-nodx="lucide"] { ... }`).
+ * `data-nodxts="lucide"` attribute so all icons can be targeted globally with
+ * CSS (e.g. `svg[data-nodxts="lucide"] { ... }`).
  *
  * The wrapper is intentionally not exported as part of the public icon API;
  * it is used internally by each generated icon function.
@@ -24,7 +24,7 @@ import type { Node, NodeChild } from "@varavel/nodx";
  *   stroke-width="2"
  *   stroke-linecap="round"
  *   stroke-linejoin="round"
- *   data-nodx="lucide"
+ *   data-nodxts="lucide"
  * ></svg>
  * ```
  *
@@ -43,7 +43,7 @@ export function lucideSvgWrapper(...children: NodeChild[]): Node {
     Attr("stroke-width", "2"),
     Attr("stroke-linecap", "round"),
     Attr("stroke-linejoin", "round"),
-    Attr("data-nodx", "lucide"),
+    Attr("data-nodxts", "lucide"),
     Group(...children),
   );
 }

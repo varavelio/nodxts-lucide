@@ -102,7 +102,7 @@ Each icon renders an `<svg>` that follows the [Lucide guide](https://lucide.dev/
   stroke-width="2"
   stroke-linecap="round"
   stroke-linejoin="round"
-  data-nodx="lucide"
+  data-nodxts="lucide"
 >
   <!-- icon paths -->
 </svg>
@@ -142,10 +142,10 @@ Cherry(Class("w-8 h-8"), Style("color: rebeccapurple"));
 
 ### Globally
 
-Every icon includes `data-nodx="lucide"`. Target it in CSS:
+Every icon includes `data-nodxts="lucide"`. Target it in CSS:
 
 ```css
-svg[data-nodx="lucide"] {
+svg[data-nodxts="lucide"] {
   stroke-width: 4;
   stroke: red;
 }
@@ -156,12 +156,12 @@ svg[data-nodx="lucide"] {
 Use `:not()` to let per-icon Tailwind classes win:
 
 ```css
-svg[data-nodx="lucide"]:not([class*="size-"]) {
+svg[data-nodxts="lucide"]:not([class*="size-"]) {
   width: 24px;
   height: 24px;
 }
 
-svg[data-nodx="lucide"]:not([class*="text-"]) {
+svg[data-nodxts="lucide"]:not([class*="text-"]) {
   color: currentColor;
 }
 ```

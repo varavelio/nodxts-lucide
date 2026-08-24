@@ -11,10 +11,10 @@ import {
   Star,
 } from "./index.ts";
 
-Deno.test("icons render SVG wrapper with data-nodx attribute", () => {
+Deno.test("icons render SVG wrapper with data-nodxts attribute", () => {
   const html = Star().render();
   assertStringIncludes(html, `<svg`);
-  assertStringIncludes(html, `data-nodx="lucide"`);
+  assertStringIncludes(html, `data-nodxts="lucide"`);
   assertStringIncludes(html, `xmlns="http://www.w3.org/2000/svg"`);
   assertStringIncludes(html, `</svg>`);
 });
@@ -31,7 +31,7 @@ Deno.test("Cherry icon renders expected paths", () => {
 Deno.test("icons forward custom attributes", () => {
   const html = Heart(Class("size-6 text-red-500")).render();
   assertStringIncludes(html, `class="size-6 text-red-500"`);
-  assertStringIncludes(html, `data-nodx="lucide"`);
+  assertStringIncludes(html, `data-nodxts="lucide"`);
 });
 
 Deno.test("icons are independent", () => {

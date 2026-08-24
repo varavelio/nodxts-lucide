@@ -45,7 +45,7 @@ run("ESM", {
   "Cherry renders svg wrapper": () => {
     const html = lucide.Cherry().render();
     assert(html.includes("<svg"), "missing <svg");
-    assert(html.includes('data-nodx="lucide"'), "missing data-nodx");
+    assert(html.includes('data-nodxts="lucide"'), "missing data-nodxts");
     assert(html.includes('xmlns="http://www.w3.org/2000/svg"'), "missing xmlns");
     assert(html.includes("</svg>"), "missing </svg>");
   },
@@ -95,7 +95,7 @@ run("ESM", {
     const html = lucide.lucideSvgWrapper().render();
     assertEquals(
       html,
-      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-nodx="lucide"></svg>',
+      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-nodxts="lucide"></svg>',
     );
   },
 });
@@ -107,7 +107,7 @@ if (lucideCjs) {
     "Cherry renders svg wrapper (CJS)": () => {
       const html = lucideCjs.Cherry().render();
       assert(html.includes("<svg"), "missing <svg");
-      assert(html.includes('data-nodx="lucide"'), "missing data-nodx");
+      assert(html.includes('data-nodxts="lucide"'), "missing data-nodxts");
     },
     "iconsInfo available (CJS)": () => {
       assert(Array.isArray(lucideCjs.iconsInfo), "iconsInfo should be array");
