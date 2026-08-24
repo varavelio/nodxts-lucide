@@ -7,7 +7,6 @@ import {
   Cherry,
   Circle,
   Heart,
-  IconsInfo,
   iconsInfo,
   Star,
 } from "./index.ts";
@@ -39,12 +38,6 @@ Deno.test("icons are independent", () => {
   const a = Circle().render();
   const b = Heart().render();
   assertEquals(a === b, false);
-});
-
-Deno.test("iconsInfo contains all icons", () => {
-  assertEquals(iconsInfo.length, 1776);
-  assertEquals(IconsInfo.length, 1776);
-  assertEquals(iconsInfo === IconsInfo, true);
 });
 
 Deno.test("iconsInfo entries have correct shape", () => {

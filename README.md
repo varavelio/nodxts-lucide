@@ -32,11 +32,11 @@
 
 ---
 
-- **1776 icons** — every Lucide icon as a type-safe function
-- **Zero dependencies** beyond `nodx` — tiny and fast
-- **Fully typed** — autocomplete for every icon name
-- **Customizable** — Tailwind, inline styles or global CSS
-- **No client JS** — pure server-rendered SVG
+- **1777 icons** - every Lucide icon as a type-safe function
+- **Zero dependencies** beyond `nodx`
+- **Fully typed** - autocomplete for every icon name
+- **Customizable** - Tailwind, inline styles or global CSS
+- **No client JS** - pure server-rendered SVG
 
 ## Installation
 
@@ -193,7 +193,7 @@ Check new Lucide releases at https://github.com/lucide-icons/lucide/releases.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).
 
 Lucide icons themselves are licensed under the
 [ISC License](https://github.com/lucide-icons/lucide/blob/main/LICENSE).

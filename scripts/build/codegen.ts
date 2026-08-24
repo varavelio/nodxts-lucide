@@ -9,7 +9,7 @@ import { minify } from "npm:html-minifier@4.0.0";
 // ---------------------------------------------------------------------------
 
 /** Lucide version to fetch. Check https://github.com/lucide-icons/lucide/releases */
-const VERSION = "1.33.0";
+const VERSION = "1.34.0";
 const ICONS_URL = `https://github.com/lucide-icons/lucide/archive/refs/tags/${VERSION}.zip`;
 const RAW_ICON_URL_PREFIX = `https://cdn.jsdelivr.net/gh/lucide-icons/lucide@${VERSION}/icons`;
 

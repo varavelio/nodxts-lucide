@@ -960,6 +960,7 @@ Luggage
 Magnet
 MailBadge
 MailCheck
+MailClock
 MailMinus
 MailOpen
 MailPlus
