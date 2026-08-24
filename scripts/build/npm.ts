@@ -12,6 +12,16 @@ export async function buildNpmPackage(): Promise<void> {
       deno: "dev",
     },
     test: false,
+    // Map the JSR dependency to its npm counterpart so the generated
+    // npm package declares a proper peer dependency instead of vendoring
+    // the code (see https://github.com/denoland/dnt#specifier-to-npm-package-mappings).
+    mappings: {
+      "@varavel/nodx": {
+        name: "@varavel/nodx",
+        version: "^1.0.0",
+        peerDependency: true,
+      },
+    },
     compilerOptions: {
       lib: ["ES2025", "DOM"] as LibName[],
       target: "ES2015",
