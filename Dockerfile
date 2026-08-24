@@ -29,7 +29,7 @@ RUN set -e && \
   # Git config
   git config --global --add safe.directory '*'
 
-WORKDIR /workspaces/nodxts
+WORKDIR /workspaces/nodxts-lucide
 
 ################
 # DEVCONTAINER #
