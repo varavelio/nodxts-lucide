@@ -1,0 +1,6 @@
+temp/
+tmp/
+dist/
+out/
+npm/
+node_modules/
