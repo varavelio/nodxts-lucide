@@ -1,0 +1,305 @@
+import { join } from "@std/path";
+import { fromRoot } from "./helpers.ts";
+
+// @ts-types="npm:@types/html-minifier@4.0.5"
+import { minify } from "npm:html-minifier@4.0.0";
+
+// ---------------------------------------------------------------------------
+// Configuration
+// ---------------------------------------------------------------------------
+
+/** Lucide version to fetch. Check https://github.com/lucide-icons/lucide/releases */
+const VERSION = "1.33.0";
+const ICONS_URL = `https://github.com/lucide-icons/lucide/archive/refs/tags/${VERSION}.zip`;
+const RAW_ICON_URL_PREFIX = `https://cdn.jsdelivr.net/gh/lucide-icons/lucide@${VERSION}/icons`;
+
+const TMP_DIR = fromRoot("./tmp");
+const ICONS_DIR = join(TMP_DIR, `lucide-${VERSION}`, "icons");
+
+const ICONS_OUTPUT = fromRoot("./src/generated/icons.ts");
+const INFO_OUTPUT = fromRoot("./src/generated/info.ts");
+const LIST_OUTPUT = fromRoot("./generated_icons.txt");
+
+// ---------------------------------------------------------------------------
+// String utilities (mirrors Go's internal/strutil)
+// ---------------------------------------------------------------------------
+
+function kebabToUpperCamel(input: string): string {
+  if (input === "") return "";
+  return input
+    .split("-")
+    .map((word) => {
+      if (word === "") return "";
+      return word[0].toUpperCase() + word.slice(1);
+    })
+    .join("");
+}
+
+function kebabToCapitalized(input: string): string {
+  if (input === "") return "";
+  return input
+    .split("-")
+    .map((word) => {
+      if (word === "") return "";
+      return word[0].toUpperCase() + word.slice(1);
+    })
+    .join(" ");
+}
+
+// ---------------------------------------------------------------------------
+// File utilities
+// ---------------------------------------------------------------------------
+
+async function downloadFile(url: string, destPath: string): Promise<void> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to download ${url}: ${response.status} ${response.statusText}`);
+  }
+  const buffer = new Uint8Array(await response.arrayBuffer());
+  await Deno.writeFile(destPath, buffer);
+  console.log(`Downloaded ${url} -> ${destPath} (${buffer.length} bytes)`);
+}
+
+async function unzip(zipPath: string, destDir: string): Promise<void> {
+  // Use system `unzip` (available in devcontainer).
+  const command = new Deno.Command("unzip", {
+    args: ["-o", "-q", zipPath, "-d", destDir],
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  const { success, code } = await command.output();
+  if (!success) {
+    throw new Error(`unzip failed with code ${code}`);
+  }
+  console.log(`Unzipped ${zipPath} -> ${destDir}`);
+}
+
+function minifySvg(content: string): string {
+  return minify(content, {
+    collapseWhitespace: true,
+    removeTagWhitespace: true,
+  });
+}
+
+async function minifySvgDir(dirPath: string): Promise<void> {
+  let count = 0;
+  for await (const entry of Deno.readDir(dirPath)) {
+    if (entry.isFile && entry.name.endsWith(".svg")) {
+      const filePath = join(dirPath, entry.name);
+      const raw = await Deno.readTextFile(filePath);
+      const minified = minifySvg(raw);
+      await Deno.writeTextFile(filePath, minified);
+      count++;
+    }
+  }
+  console.log(`Minified ${count} SVG files in ${dirPath}`);
+}
+
+// ---------------------------------------------------------------------------
+// Code generation helpers
+// ---------------------------------------------------------------------------
+
+interface IconInfoJson {
+  tags?: string[];
+  categories?: string[];
+}
+
+function generateComponent(
+  fileName: string,
+  funcName: string,
+  svgBytes: string,
+): string {
+  const fullSvg = svgBytes;
+  const start = fullSvg.indexOf(">") + 1;
+  if (start === 0) {
+    throw new Error(`Could not find start of svg tag in ${fileName}`);
+  }
+  let svg = fullSvg.slice(start);
+  svg = svg.replace("</svg>", "");
+  svg = svg.trim();
+
+  const previewUrl = `${RAW_ICON_URL_PREFIX}/${fileName}`;
+
+  // Use Raw with backticks; svg content does not contain backticks.
+  // We alias Group/Raw as NodxGroup/NodxRaw to avoid shadowing the
+  // `Group` icon itself.
+  return `/**
+ * ${funcName} icon: ${previewUrl}
+ */
+export function ${funcName}(...children: NodeChild[]): Node {
+  return lucideSvgWrapper(
+    NodxGroup(...children),
+    NodxRaw(\`${svg}\`),
+  );
+}`;
+}
+
+function generateInfoEntry(
+  name: string,
+  funcName: string,
+  jsonBytes: string,
+): string {
+  const data = JSON.parse(jsonBytes) as IconInfoJson;
+  const tags = data.tags ?? [];
+  const categories = data.categories ?? [];
+
+  const tagsStr = tags.map((t) => `"${t}"`).join(", ");
+  const catsStr = categories.map((c) => `"${c}"`).join(", ");
+
+  return `  {
+    name: "${name}",
+    icon: ${funcName},
+    tags: [${tagsStr}],
+    categories: [${catsStr}],
+  },`;
+}
+
+function header(kind: string): string {
+  return `// Code generated by NodX Lucide codegen (v${VERSION}). DO NOT EDIT.
+// Lucide version ${VERSION}
+// Source: https://github.com/lucide-icons/lucide/releases/tag/${VERSION}
+// Kind: ${kind}
+`;
+}
+
+async function formatGeneratedFiles(): Promise<void> {
+  const cmd = new Deno.Command(Deno.execPath(), {
+    args: ["fmt", fromRoot("./src/generated")],
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  const { success } = await cmd.output();
+  if (!success) {
+    throw new Error("deno fmt failed for generated files");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+
+export async function runCodegen(): Promise<void> {
+  // Clean tmp
+  try {
+    await Deno.remove(TMP_DIR, { recursive: true });
+  } catch {
+    // ignore
+  }
+  await Deno.mkdir(TMP_DIR, { recursive: true });
+
+  // Download
+  console.log(`Downloading Lucide ${VERSION}...`);
+  const zipPath = join(TMP_DIR, "icons.zip");
+  await downloadFile(ICONS_URL, zipPath);
+
+  // Unzip
+  console.log("Unzipping...");
+  await unzip(zipPath, TMP_DIR);
+
+  // Minify
+  console.log("Minifying SVGs...");
+  await minifySvgDir(ICONS_DIR);
+
+  // Read icons dir
+  console.log("Generating TypeScript code...");
+  const entries: Deno.DirEntry[] = [];
+  for await (const e of Deno.readDir(ICONS_DIR)) {
+    entries.push(e);
+  }
+  // Deterministic lexical order (byte-wise) matching Go's ReadDir.
+  entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+
+  const components: string[] = [];
+  const infos: string[] = [];
+  const includedIcons: string[] = [];
+
+  for (const entry of entries) {
+    if (entry.isDirectory) continue;
+    const ext = entry.name.endsWith(".svg")
+      ? ".svg"
+      : entry.name.endsWith(".json")
+      ? ".json"
+      : null;
+    if (!ext) continue;
+
+    const kebab = entry.name.slice(0, -ext.length);
+    const funcName = kebabToUpperCamel(kebab);
+    const name = kebabToCapitalized(kebab);
+    const filePath = join(ICONS_DIR, entry.name);
+    const content = await Deno.readTextFile(filePath);
+
+    if (ext === ".svg") {
+      const comp = generateComponent(entry.name, funcName, content);
+      components.push(comp);
+      includedIcons.push(funcName);
+    } else {
+      const info = generateInfoEntry(name, funcName, content);
+      infos.push(info);
+    }
+  }
+
+  // Do not sort; preserve lexical filename order like Go.
+  // Build icons.ts
+  const iconsFile = `${header("icons")}
+import type { Node, NodeChild } from "@varavel/nodx";
+import { Group as NodxGroup, Raw as NodxRaw } from "@varavel/nodx";
+import { lucideSvgWrapper } from "../lucide.ts";
+
+${components.join("\n\n")}
+`;
+
+  // Build info.ts
+  const infoFile = `${header("info")}
+import type { Node, NodeChild } from "@varavel/nodx";
+${components.length > 0 ? `import {\n  ${includedIcons.join(",\n  ")},\n} from "./icons.ts";` : ""}
+
+/**
+ * Information about a single Lucide icon.
+ */
+export interface IconInfo {
+  /** Human-readable name, e.g. "Circle User". */
+  name: string;
+  /** The icon component function. */
+  icon: (...children: NodeChild[]) => Node;
+  /** Search tags. */
+  tags: string[];
+  /** Categories the icon belongs to. */
+  categories: string[];
+}
+
+/**
+ * List of all icons with their metadata.
+ *
+ * Mirrors Go's \`IconsInfo\` slice.
+ */
+export const iconsInfo: IconInfo[] = [
+${infos.join("\n")}
+];
+
+/** Alias for Go compatibility. */
+export const IconsInfo = iconsInfo;
+`;
+
+  // Ensure output dir
+  await Deno.mkdir(join(fromRoot("./src/generated")), { recursive: true });
+
+  await Deno.writeTextFile(ICONS_OUTPUT, iconsFile);
+  console.log(`Wrote ${ICONS_OUTPUT} (${components.length} icons)`);
+
+  await Deno.writeTextFile(INFO_OUTPUT, infoFile);
+  console.log(`Wrote ${INFO_OUTPUT} (${infos.length} entries)`);
+
+  await Deno.writeTextFile(LIST_OUTPUT, includedIcons.join("\n") + "\n");
+  console.log(`Wrote ${LIST_OUTPUT} (${includedIcons.length} names)`);
+
+  // Format
+  await formatGeneratedFiles();
+
+  console.log("Codegen finished successfully.");
+  console.log(`Lucide version: ${VERSION}`);
+  console.log(`Icons generated: ${includedIcons.length}`);
+}
+
+if (import.meta.main) {
+  await runCodegen();
+}
